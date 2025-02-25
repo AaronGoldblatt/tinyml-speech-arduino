@@ -1,6 +1,6 @@
 name: Autograding Tests
 'on':
-- workflow_dispatch
+- push
 - repository_dispatch
 permissions:
   checks: write
@@ -18,7 +18,7 @@ jobs:
       uses: classroom-resources/autograding-python-grader@v1
       with:
         timeout: 10
-        setup-command: sudo -H pip3 install pytest torch numpy
+        setup-command: pip3 install pytest torch numpy
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
