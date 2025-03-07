@@ -67,10 +67,11 @@ def compute_forward_memory(model, input_shape, device):
     :return:
     """
     memory_bytes = 0
-    input = torch.ones(input_shape).to(device)
-    memory_bytes += np.prod(input_shape) * input.element_size()
-    for _, layer in model.named_modules():
-        activations = layer(input)
-        memory_bytes += np.prod(activations.shape) * activations.element_size()
+    layer_activations = torch.ones(input_shape).to(device)
+    memory_bytes += np.prod(input_shape) * layer_activations.element_size()
+    with torch.no_grad():
+        for _, layer in model.named_children():
+            layer_activations = layer(layer_activations)
+            memory_bytes += np.prod(layer_activations.shape) * layer_activations.element_size()
     return memory_bytes
 
