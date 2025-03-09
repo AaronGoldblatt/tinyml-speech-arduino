@@ -45,11 +45,12 @@ def plot_test_results(correct_list, total_list, audio_processor, title):
     fig, ax = plt.subplots()
     ax.axis('tight')
     ax.set_axis_off()
+    num_cols = len(col_names)
     table = plt.table(cellText=cell_text,
                       rowLabels=rows,
                       colLabels=col_names,
                       rowColours = ["lightblue"]*3,
-                      colColours = ["lightblue"]*5,
+                      colColours = ["lightblue"]*num_cols,
                       loc='upper left',
                       cellLoc='center')
     ax.set_title(title, fontweight = "bold")
