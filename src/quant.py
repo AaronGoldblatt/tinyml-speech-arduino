@@ -225,8 +225,9 @@ class QConfig(object):
         """
         with torch.no_grad():
             if self.is_symmetric:
+                abs_max = max(abs(saturation_min), abs(saturation_max))
                 range_max = 2 ** (self.quant_bits - 1) - 1
-                scale = saturation_max / range_max
+                scale = abs_max / range_max
                 zero_point = torch.tensor(0)
             else:
                 range_max = 2 ** self.quant_bits - 1
