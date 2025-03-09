@@ -21,7 +21,7 @@ def flop(model, input_shape, device):
                 output_height, output_width = output.shape[2:]
                 kernel_operations = module.kernel_size[0] * module.kernel_size[1] * (module.in_channels // module.groups)
                 flops['multiply'] = batch_size * output_height * output_width * module.out_channels * kernel_operations
-                flops['add'] = batch_size * output_height * output_width * module.out_channels * (kernel_operations - 1)
+                flops['add'] = batch_size * output_height * output_width * module.out_channels * kernel_operations
                 if module.bias is not None:
                     flops['add'] += batch_size * module.out_channels * output_height * output_width
 
@@ -68,10 +68,12 @@ def compute_forward_memory(model, input_shape, device):
     """
     memory_bytes = 0
     layer_activations = torch.ones(input_shape).to(device)
-    memory_bytes += np.prod(input_shape) * layer_activations.element_size()
     with torch.no_grad():
-        for _, layer in model.named_children():
+        for _, layer in model.named_modules():
+            # Add memory for the input activations to the layer
+            memory_bytes += np.prod(layer_activations.shape) * layer_activations.element_size()
             layer_activations = layer(layer_activations)
+            # Add memory for the output activations from the layer
             memory_bytes += np.prod(layer_activations.shape) * layer_activations.element_size()
     return memory_bytes
 
