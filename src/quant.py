@@ -334,20 +334,11 @@ def conv2d_linear_quantized(
 
     x_quantized = quantize_activations(x, a_qconfig, fake_quantize=True)
     w_quantized = quantize_weights_bias(module.weight, w_qconfig, fake_quantize=True)
+    module.weight.data = w_quantized
     if module.bias is not None:
         b_quantized = quantize_weights_bias(module.bias, b_qconfig, fake_quantize=True)
-    if isinstance(module, nn.Linear):
-        y = F.linear(x_quantized, w_quantized, b_quantized)
-    elif isinstance(module, nn.Conv2d):
-        y = F.conv2d(
-            x_quantized,
-            w_quantized,
-            b_quantized,
-            module.stride,
-            module.padding,
-            module.dilation,
-            module.groups
-        )
+        module.bias.data = b_quantized
+    y = module(x_quantized)
     return y
 
 
