@@ -133,10 +133,10 @@ class SymmetricQuantFunction(torch.autograd.Function):
 
         # For symmetric quantization, zero point should be zero.
         zero_point = 0
-        quantized_x = linear_quantize(x, scale, zero_point)
+        scaled_x = x / scale
         range_boundary = 2 ** (k - 1)
         output = torch.clamp(
-            quantized_x,
+            ste_round().forward(ctx, scaled_x),
             -range_boundary,
             range_boundary - 1
         )
@@ -179,9 +179,9 @@ class AsymmetricQuantFunction(torch.autograd.Function):
             raise ValueError("The QuantFunction requires a pre-calculated zero point")
 
         range_max = 2 ** k - 1
-        quantized_x = linear_quantize(x, scale, zero_point)
+        scaled_x = x / scale
         output = torch.clamp(
-            quantized_x,
+            ste_round().forward(ctx, scaled_x + zero_point),
             0,
             range_max
         )
@@ -334,11 +334,23 @@ def conv2d_linear_quantized(
 
     x_quantized = quantize_activations(x, a_qconfig, fake_quantize=True)
     w_quantized = quantize_weights_bias(module.weight, w_qconfig, fake_quantize=True)
-    module.weight.data = w_quantized
+    # module.weight.data = w_quantized
     if module.bias is not None:
         b_quantized = quantize_weights_bias(module.bias, b_qconfig, fake_quantize=True)
-        module.bias.data = b_quantized
-    y = module(x_quantized)
+        # module.bias.data = b_quantized
+    # y = module(x_quantized)
+    if isinstance(module, nn.Linear):
+        y = F.linear(x_quantized, w_quantized, b_quantized)
+    elif isinstance(module, nn.Conv2d):
+        y = F.conv2d(
+            x_quantized,
+            w_quantized,
+            b_quantized,
+            module.stride,
+            module.padding,
+            module.dilation,
+            module.groups
+        )
     return y
 
 
