@@ -67,7 +67,7 @@ def linear_quantize(input, scale, zero_point):
     zero_pint: shift for quantization
     """
     scaled_input = input / scale
-    output = ste_round.forward(None, scaled_input) + zero_point
+    output = ste_round().forward(None, scaled_input) + zero_point
     return output
 
 
