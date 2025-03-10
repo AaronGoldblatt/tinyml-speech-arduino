@@ -17,7 +17,7 @@ class ste_round(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        return grad_output.clone()
+        return torch.tensor([grad_output])
 
 
 # Get percentile min max
@@ -232,7 +232,7 @@ class QConfig(object):
             else:
                 range_max = 2 ** self.quant_bits - 1
                 scale = (saturation_max - saturation_min) / range_max
-                zero_point = linear_quantize(-saturation_min, scale, 0)
+                zero_point = ste_round().forward(None, -saturation_min / scale)
         return scale, zero_point
 
     def quantize_with_params(self, x, scale, zero_point, fake_quantize=False):
@@ -309,7 +309,8 @@ def quantize_weights_bias(w, qconfig, fake_quantize=False):
     """
     Return quantized weights calculated using given qconfig.
     """
-    w_min, w_max = torch.min(w), torch.max(w)
+    w_detached = w.data.detach()
+    w_min, w_max = torch.min(w_detached), torch.max(w_detached)
     w_q = qconfig.quantize_with_min_max(
         w,
         w_min,
@@ -334,23 +335,23 @@ def conv2d_linear_quantized(
 
     x_quantized = quantize_activations(x, a_qconfig, fake_quantize=True)
     w_quantized = quantize_weights_bias(module.weight, w_qconfig, fake_quantize=True)
-    # module.weight.data = w_quantized
     if module.bias is not None:
         b_quantized = quantize_weights_bias(module.bias, b_qconfig, fake_quantize=True)
-        # module.bias.data = b_quantized
-    # y = module(x_quantized)
-    if isinstance(module, nn.Linear):
-        y = F.linear(x_quantized, w_quantized, b_quantized)
-    elif isinstance(module, nn.Conv2d):
-        y = F.conv2d(
-            x_quantized,
-            w_quantized,
-            b_quantized,
-            module.stride,
-            module.padding,
-            module.dilation,
-            module.groups
-        )
+        module.bias.data = b_quantized
+    module.weight.data = w_quantized
+    y = module(x_quantized)
+    # if isinstance(module, nn.Linear):
+    #     y = F.linear(x_quantized, w_quantized, b_quantized)
+    # elif isinstance(module, nn.Conv2d):
+    #     y = F.conv2d(
+    #         x_quantized,
+    #         w_quantized,
+    #         b_quantized,
+    #         module.stride,
+    #         module.padding,
+    #         module.dilation,
+    #         module.groups
+    #     )
     return y
 
 
