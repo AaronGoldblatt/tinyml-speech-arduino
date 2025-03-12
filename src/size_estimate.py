@@ -11,11 +11,14 @@ def flop(model, input_shape, device):
             "Hook that calculates number of floating point operations"
             flops = {}
             batch_size = input[0].shape[0]
+            
             if isinstance(module, nn.Linear):
-                flops['multiply'] = batch_size * module.in_features * module.out_features
-                flops['add'] = batch_size * module.in_features * module.out_features
+                input_features = input[0].shape[1]
+                output_features = output.shape[1]
+                flops['multiply'] = batch_size * input_features * output_features
+                flops['add'] = batch_size * input_features * output_features
                 if module.bias is not None:
-                    flops['add'] += batch_size * module.out_features
+                    flops['add'] += batch_size * output_features
 
             if isinstance(module, nn.Conv2d):
                 in_channels = input[0].shape[1]
