@@ -20,11 +20,11 @@ class Reshape(nn.Module):
 
 
 class TinyConv(nn.Module):
-    def __init__(self, model_settings, n_input=1, n_output=4):
+    def __init__(self, model_settings, n_input=1, n_output=4, num_filters=8):
         super(TinyConv, self).__init__()
         first_filter_width = 8
         first_filter_height = 10
-        first_filter_count = 8
+        first_filter_count = num_filters
         first_conv_stride_x = 2
         first_conv_stride_y = 2
         self.model_settings = model_settings
@@ -53,7 +53,7 @@ class TinyConv(nn.Module):
         self.dropout = nn.Dropout()
 
         # Reshape layer
-        fc_in_features = 4000
+        fc_in_features = num_filters * 500
         self.fc_reshape = Reshape([-1, fc_in_features])
 
         # Fully Connected layer
