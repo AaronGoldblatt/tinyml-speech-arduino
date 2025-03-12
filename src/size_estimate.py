@@ -18,12 +18,14 @@ def flop(model, input_shape, device):
                     flops['add'] += batch_size * module.out_features
 
             if isinstance(module, nn.Conv2d):
+                in_channels = input[0].shape[1]
+                out_channels = output.shape[1]
                 output_height, output_width = output.shape[2:]
-                kernel_operations = module.kernel_size[0] * module.kernel_size[1] * (module.in_channels // module.groups)
-                flops['multiply'] = batch_size * output_height * output_width * module.out_channels * kernel_operations
-                flops['add'] = batch_size * output_height * output_width * module.out_channels * kernel_operations
+                kernel_operations = module.kernel_size[0] * module.kernel_size[1] * (in_channels // module.groups)
+                flops['multiply'] = batch_size * output_height * output_width * out_channels * kernel_operations
+                flops['add'] = batch_size * output_height * output_width * out_channels * kernel_operations
                 if module.bias is not None:
-                    flops['add'] += batch_size * module.out_channels * output_height * output_width
+                    flops['add'] += batch_size * out_channels * output_height * output_width
 
             if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d)):
                 num_elements = np.prod(input[0].shape)
