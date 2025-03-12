@@ -108,14 +108,17 @@ class TinyConvPurged(nn.Module):
         H = input_time_size
         C = 1
 
+        # Calculate output dimensions after convolution
+        out_h = ((H + 2 * 5 - first_filter_height) // first_conv_stride_y + 1)
+        out_w = ((W + 2 * 3 - first_filter_width) // first_conv_stride_x + 1)
+        
         # Reshape layer
         self.conv_reshape = Reshape([-1, C, H, W])
 
         # Conv2d layer
         self.conv = nn.Conv2d(in_channels=n_input,
                               out_channels=first_filter_count,
-                              kernel_size=
-                              (first_filter_height, first_filter_width),
+                              kernel_size=(first_filter_height, first_filter_width),
                               stride=(first_conv_stride_y, first_conv_stride_x),
                               padding=(5, 3))
 
@@ -125,8 +128,8 @@ class TinyConvPurged(nn.Module):
         # Dropout layer
         self.dropout = nn.Dropout()
 
-        # Reshape layer
-        fc_in_features = num_filters * 500
+        # Calculate fc input features based on conv output
+        fc_in_features = num_filters * out_h * out_w
         self.fc_reshape = Reshape([-1, fc_in_features])
 
         # Fully Connected layer
@@ -145,6 +148,10 @@ class TinyConvPurged(nn.Module):
         # Pass x through relu layer
         x_relu = self.relu(x_conv)
 
+        # Pass x through dropout layer during training
+        if self.training:
+            x_relu = self.dropout(x_relu)
+
         # Reshape x
         x_reshaped = self.fc_reshape(x_relu)
 
@@ -153,7 +160,7 @@ class TinyConvPurged(nn.Module):
 
         # Pass x through softmax layer
         if self.training:
-            y = F.log_softmax(x_fc,-1)
+            y = F.log_softmax(x_fc, -1)
         else:
             y = self.softmax(x_fc)
 
