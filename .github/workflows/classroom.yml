@@ -18,6 +18,7 @@ jobs:
       uses: classroom-resources/autograding-python-grader@v1
       with:
         timeout: 10
+        max-score: 4
         setup-command: pip3 install pytest torch numpy
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
